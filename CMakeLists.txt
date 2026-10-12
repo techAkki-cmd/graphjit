@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJIT VERSION 0.6.0 LANGUAGES C CXX)
+project(GraphJIT VERSION 0.7.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,6 +51,19 @@ graphjit_enable_warnings(graphjit_parser)
 add_executable(graphjit_parser_demo parser_main.cpp)
 target_link_libraries(graphjit_parser_demo PRIVATE graphjit_parser)
 graphjit_enable_warnings(graphjit_parser_demo)
+
+add_library(graphjit_optimizer constant_folding.cpp)
+target_include_directories(graphjit_optimizer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(graphjit_optimizer PUBLIC graphjit_ast)
+target_compile_features(graphjit_optimizer PUBLIC cxx_std_20)
+graphjit_enable_warnings(graphjit_optimizer)
+
+add_executable(graphjit_opt_demo opt_main.cpp)
+target_link_libraries(
+    graphjit_opt_demo
+    PRIVATE graphjit_optimizer graphjit_parser
+)
+graphjit_enable_warnings(graphjit_opt_demo)
 
 add_library(graphjit_shape_analysis shape_inference.cpp)
 target_include_directories(graphjit_shape_analysis PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -131,6 +144,14 @@ if(BUILD_TESTING)
     )
     graphjit_enable_warnings(graphjit_shape_tests)
     add_test(NAME graphjit_shape_tests COMMAND graphjit_shape_tests)
+
+    add_executable(graphjit_opt_tests tests/constant_folding_tests.cpp)
+    target_link_libraries(
+        graphjit_opt_tests
+        PRIVATE graphjit_optimizer graphjit_parser
+    )
+    graphjit_enable_warnings(graphjit_opt_tests)
+    add_test(NAME graphjit_opt_tests COMMAND graphjit_opt_tests)
 
     if(GRAPHJIT_ENABLE_LLVM)
         add_executable(graphjit_ir_tests tests/ir_generator_tests.cpp)

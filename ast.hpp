@@ -73,6 +73,14 @@ public:
     [[nodiscard]] const ASTNode& lhs() const noexcept;
     [[nodiscard]] ASTNode& rhs() noexcept;
     [[nodiscard]] const ASTNode& rhs() const noexcept;
+
+    /// Transfers child ownership to an AST rewriter. The corresponding setter
+    /// must restore the child before the node is observed again.
+    [[nodiscard]] std::unique_ptr<ASTNode> takeLhs() noexcept;
+    [[nodiscard]] std::unique_ptr<ASTNode> takeRhs() noexcept;
+    void setLhs(std::unique_ptr<ASTNode> lhs);
+    void setRhs(std::unique_ptr<ASTNode> rhs);
+
     void accept(ASTVisitor& visitor) override;
 
 private:
@@ -92,6 +100,8 @@ public:
     [[nodiscard]] const std::vector<std::string>& arguments() const noexcept;
     [[nodiscard]] ASTNode& body() noexcept;
     [[nodiscard]] const ASTNode& body() const noexcept;
+    [[nodiscard]] std::unique_ptr<ASTNode> takeBody() noexcept;
+    void setBody(std::unique_ptr<ASTNode> body);
     void accept(ASTVisitor& visitor) override;
 
 private:

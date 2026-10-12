@@ -138,6 +138,17 @@ void testAccessorsAndOwnership() {
     expect(&binary.lhs() == lhsAddress, "left child ownership was not transferred");
     expect(&binary.rhs() == rhsAddress, "right child ownership was not transferred");
 
+    auto takenLhs = binary.takeLhs();
+    auto takenRhs = binary.takeRhs();
+    expect(takenLhs.get() == lhsAddress, "left child could not be taken for rewriting");
+    expect(takenRhs.get() == rhsAddress, "right child could not be taken for rewriting");
+    expectInvalidArgument([&] { binary.setLhs(nullptr); });
+    expectInvalidArgument([&] { binary.setRhs(nullptr); });
+    binary.setLhs(std::move(takenLhs));
+    binary.setRhs(std::move(takenRhs));
+    expect(&binary.lhs() == lhsAddress, "left child was not restored");
+    expect(&binary.rhs() == rhsAddress, "right child was not restored");
+
     auto body = std::make_unique<VariableNode>("A");
     const ASTNode* const bodyAddress = body.get();
     FunctionDeclNode function("compute", {"A", "B"}, std::move(body));
@@ -145,6 +156,12 @@ void testAccessorsAndOwnership() {
     expect(function.arguments() == std::vector<std::string>({"A", "B"}),
            "incorrect function arguments");
     expect(&function.body() == bodyAddress, "function body ownership was not transferred");
+
+    auto takenBody = function.takeBody();
+    expect(takenBody.get() == bodyAddress, "function body could not be taken for rewriting");
+    expectInvalidArgument([&] { function.setBody(nullptr); });
+    function.setBody(std::move(takenBody));
+    expect(&function.body() == bodyAddress, "function body was not restored");
 }
 
 void testFunctionPrinterOutput() {

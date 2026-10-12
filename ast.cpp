@@ -76,6 +76,28 @@ const ASTNode& BinaryOpNode::rhs() const noexcept {
     return *rhs_;
 }
 
+std::unique_ptr<ASTNode> BinaryOpNode::takeLhs() noexcept {
+    return std::move(lhs_);
+}
+
+std::unique_ptr<ASTNode> BinaryOpNode::takeRhs() noexcept {
+    return std::move(rhs_);
+}
+
+void BinaryOpNode::setLhs(std::unique_ptr<ASTNode> lhs) {
+    if (!lhs) {
+        throw std::invalid_argument("binary operator requires a left child");
+    }
+    lhs_ = std::move(lhs);
+}
+
+void BinaryOpNode::setRhs(std::unique_ptr<ASTNode> rhs) {
+    if (!rhs) {
+        throw std::invalid_argument("binary operator requires a right child");
+    }
+    rhs_ = std::move(rhs);
+}
+
 void BinaryOpNode::accept(ASTVisitor& visitor) {
     visitor.visit(*this);
 }
@@ -109,6 +131,17 @@ ASTNode& FunctionDeclNode::body() noexcept {
 
 const ASTNode& FunctionDeclNode::body() const noexcept {
     return *body_;
+}
+
+std::unique_ptr<ASTNode> FunctionDeclNode::takeBody() noexcept {
+    return std::move(body_);
+}
+
+void FunctionDeclNode::setBody(std::unique_ptr<ASTNode> body) {
+    if (!body) {
+        throw std::invalid_argument("function declaration requires a body");
+    }
+    body_ = std::move(body);
 }
 
 void FunctionDeclNode::accept(ASTVisitor& visitor) {
