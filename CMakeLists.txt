@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJIT VERSION 0.3.0 LANGUAGES CXX)
+project(GraphJIT VERSION 0.4.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -52,6 +52,19 @@ add_executable(graphjit_parser_demo parser_main.cpp)
 target_link_libraries(graphjit_parser_demo PRIVATE graphjit_parser)
 graphjit_enable_warnings(graphjit_parser_demo)
 
+add_library(graphjit_shape_analysis shape_inference.cpp)
+target_include_directories(graphjit_shape_analysis PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(graphjit_shape_analysis PUBLIC graphjit_ast)
+target_compile_features(graphjit_shape_analysis PUBLIC cxx_std_20)
+graphjit_enable_warnings(graphjit_shape_analysis)
+
+add_executable(graphjit_shape_demo shape_main.cpp)
+target_link_libraries(
+    graphjit_shape_demo
+    PRIVATE graphjit_shape_analysis graphjit_parser
+)
+graphjit_enable_warnings(graphjit_shape_demo)
+
 include(CTest)
 if(BUILD_TESTING)
     add_executable(graphjit_lexer_tests tests/lexer_tests.cpp)
@@ -68,4 +81,12 @@ if(BUILD_TESTING)
     target_link_libraries(graphjit_parser_tests PRIVATE graphjit_parser)
     graphjit_enable_warnings(graphjit_parser_tests)
     add_test(NAME graphjit_parser_tests COMMAND graphjit_parser_tests)
+
+    add_executable(graphjit_shape_tests tests/shape_inference_tests.cpp)
+    target_link_libraries(
+        graphjit_shape_tests
+        PRIVATE graphjit_shape_analysis graphjit_parser
+    )
+    graphjit_enable_warnings(graphjit_shape_tests)
+    add_test(NAME graphjit_shape_tests COMMAND graphjit_shape_tests)
 endif()
