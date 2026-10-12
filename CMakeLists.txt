@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJITLexer VERSION 0.1.0 LANGUAGES CXX)
+project(GraphJIT VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,10 +32,25 @@ add_executable(graphjit_lexer_demo main.cpp)
 target_link_libraries(graphjit_lexer_demo PRIVATE graphjit_lexer)
 graphjit_enable_warnings(graphjit_lexer_demo)
 
+add_library(graphjit_ast ast.cpp ast_printer.cpp)
+target_include_directories(graphjit_ast PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(graphjit_ast PUBLIC graphjit_lexer)
+target_compile_features(graphjit_ast PUBLIC cxx_std_20)
+graphjit_enable_warnings(graphjit_ast)
+
+add_executable(graphjit_ast_demo ast_main.cpp)
+target_link_libraries(graphjit_ast_demo PRIVATE graphjit_ast)
+graphjit_enable_warnings(graphjit_ast_demo)
+
 include(CTest)
 if(BUILD_TESTING)
     add_executable(graphjit_lexer_tests tests/lexer_tests.cpp)
     target_link_libraries(graphjit_lexer_tests PRIVATE graphjit_lexer)
     graphjit_enable_warnings(graphjit_lexer_tests)
     add_test(NAME graphjit_lexer_tests COMMAND graphjit_lexer_tests)
+
+    add_executable(graphjit_ast_tests tests/ast_tests.cpp)
+    target_link_libraries(graphjit_ast_tests PRIVATE graphjit_ast)
+    graphjit_enable_warnings(graphjit_ast_tests)
+    add_test(NAME graphjit_ast_tests COMMAND graphjit_ast_tests)
 endif()
