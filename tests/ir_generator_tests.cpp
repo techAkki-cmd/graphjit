@@ -133,7 +133,7 @@ void testInvalidInputs() {
     IRGenerator matrixGenerator;
     expectException<std::runtime_error>(
         [&] { static_cast<void>(matrixGenerator.compile(matrixMultiply.get())); },
-        "deferred to Phase 6");
+        "requires tensor operands");
     expect(matrixGenerator.module().getFunction("__anon_expr") == nullptr,
            "failed matrix compilation left a function behind");
 
@@ -160,7 +160,7 @@ void testCompileLifecycle() {
     IRGenerator generator;
 
     expectException<std::runtime_error>(
-        [&] { static_cast<void>(generator.compile(invalid.get())); }, "Phase 6");
+        [&] { static_cast<void>(generator.compile(invalid.get())); }, "tensor operands");
     llvm::Function* const function = generator.compile(valid.get());
     expect(returnedConstant(*function) == 5.0,
            "generator did not recover after a failed compile");

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJIT VERSION 0.5.0 LANGUAGES C CXX)
+project(GraphJIT VERSION 0.6.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -94,7 +94,7 @@ if(GRAPHJIT_ENABLE_LLVM)
     )
     target_link_libraries(
         graphjit_ir_backend
-        PUBLIC graphjit_ast ${GRAPHJIT_LLVM_LIBS}
+        PUBLIC graphjit_ast graphjit_shape_analysis ${GRAPHJIT_LLVM_LIBS}
     )
     target_compile_features(graphjit_ir_backend PUBLIC cxx_std_20)
     graphjit_enable_warnings(graphjit_ir_backend)
@@ -102,7 +102,7 @@ if(GRAPHJIT_ENABLE_LLVM)
     add_executable(graphjit_ir_demo ir_main.cpp)
     target_link_libraries(
         graphjit_ir_demo
-        PRIVATE graphjit_ir_backend graphjit_parser
+        PRIVATE graphjit_ir_backend
     )
     graphjit_enable_warnings(graphjit_ir_demo)
 endif()
@@ -140,5 +140,15 @@ if(BUILD_TESTING)
         )
         graphjit_enable_warnings(graphjit_ir_tests)
         add_test(NAME graphjit_ir_tests COMMAND graphjit_ir_tests)
+
+        add_executable(graphjit_tensor_ir_tests tests/tensor_ir_generator_tests.cpp)
+        target_link_libraries(
+            graphjit_tensor_ir_tests
+            PRIVATE
+                graphjit_ir_backend
+                graphjit_shape_analysis
+        )
+        graphjit_enable_warnings(graphjit_tensor_ir_tests)
+        add_test(NAME graphjit_tensor_ir_tests COMMAND graphjit_tensor_ir_tests)
     endif()
 endif()
