@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJIT VERSION 0.4.0 LANGUAGES CXX)
+project(GraphJIT VERSION 0.5.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -65,6 +65,48 @@ target_link_libraries(
 )
 graphjit_enable_warnings(graphjit_shape_demo)
 
+option(GRAPHJIT_ENABLE_LLVM "Build the LLVM IR backend" ON)
+
+if(GRAPHJIT_ENABLE_LLVM)
+    find_package(LLVM REQUIRED CONFIG)
+    message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+    message(STATUS "Using LLVMConfig.cmake from ${LLVM_DIR}")
+
+    separate_arguments(
+        GRAPHJIT_LLVM_DEFINITIONS
+        NATIVE_COMMAND
+        "${LLVM_DEFINITIONS}"
+    )
+    llvm_map_components_to_libnames(GRAPHJIT_LLVM_LIBS core support)
+
+    add_library(graphjit_ir_backend ir_generator.cpp)
+    target_include_directories(
+        graphjit_ir_backend
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_include_directories(
+        graphjit_ir_backend
+        SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS}
+    )
+    target_compile_options(
+        graphjit_ir_backend
+        PUBLIC ${GRAPHJIT_LLVM_DEFINITIONS}
+    )
+    target_link_libraries(
+        graphjit_ir_backend
+        PUBLIC graphjit_ast ${GRAPHJIT_LLVM_LIBS}
+    )
+    target_compile_features(graphjit_ir_backend PUBLIC cxx_std_20)
+    graphjit_enable_warnings(graphjit_ir_backend)
+
+    add_executable(graphjit_ir_demo ir_main.cpp)
+    target_link_libraries(
+        graphjit_ir_demo
+        PRIVATE graphjit_ir_backend graphjit_parser
+    )
+    graphjit_enable_warnings(graphjit_ir_demo)
+endif()
+
 include(CTest)
 if(BUILD_TESTING)
     add_executable(graphjit_lexer_tests tests/lexer_tests.cpp)
@@ -89,4 +131,14 @@ if(BUILD_TESTING)
     )
     graphjit_enable_warnings(graphjit_shape_tests)
     add_test(NAME graphjit_shape_tests COMMAND graphjit_shape_tests)
+
+    if(GRAPHJIT_ENABLE_LLVM)
+        add_executable(graphjit_ir_tests tests/ir_generator_tests.cpp)
+        target_link_libraries(
+            graphjit_ir_tests
+            PRIVATE graphjit_ir_backend graphjit_parser
+        )
+        graphjit_enable_warnings(graphjit_ir_tests)
+        add_test(NAME graphjit_ir_tests COMMAND graphjit_ir_tests)
+    endif()
 endif()
