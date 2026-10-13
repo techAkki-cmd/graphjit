@@ -13,6 +13,7 @@ class FloatLiteralNode;
 class VariableNode;
 class BinaryOpNode;
 class FunctionDeclNode;
+class FusedKernelNode;
 
 /// Double-dispatch interface for operations over the AST.
 class ASTVisitor {
@@ -23,6 +24,7 @@ public:
     virtual void visit(VariableNode& node) = 0;
     virtual void visit(BinaryOpNode& node) = 0;
     virtual void visit(FunctionDeclNode& node) = 0;
+    virtual void visit(FusedKernelNode& node) = 0;
 };
 
 /// Polymorphic base for all GraphJIT syntax tree nodes.
@@ -108,6 +110,21 @@ private:
     std::string name_;
     std::vector<std::string> arguments_;
     std::unique_ptr<ASTNode> body_;
+};
+
+/// Marks a maximal element-wise expression region for fused code generation.
+class FusedKernelNode final : public ASTNode {
+public:
+    explicit FusedKernelNode(std::unique_ptr<ASTNode> fusedExpression);
+
+    [[nodiscard]] ASTNode& fusedExpression() noexcept;
+    [[nodiscard]] const ASTNode& fusedExpression() const noexcept;
+    [[nodiscard]] std::unique_ptr<ASTNode> takeFusedExpression() noexcept;
+    void setFusedExpression(std::unique_ptr<ASTNode> fusedExpression);
+    void accept(ASTVisitor& visitor) override;
+
+private:
+    std::unique_ptr<ASTNode> fusedExpression_;
 };
 
 /// Returns the source spelling for a valid binary operator token.

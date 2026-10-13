@@ -19,6 +19,7 @@ public:
     void visit(VariableNode& node) override;
     void visit(BinaryOpNode& node) override;
     void visit(FunctionDeclNode& node) override;
+    void visit(FusedKernelNode& node) override;
 
 private:
     void printIndent();

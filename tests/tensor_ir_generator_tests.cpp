@@ -25,6 +25,7 @@ using graphjit::analysis::TensorShape;
 using graphjit::ast::ASTNode;
 using graphjit::ast::BinaryOpNode;
 using graphjit::ast::FloatLiteralNode;
+using graphjit::ast::FusedKernelNode;
 using graphjit::ast::VariableNode;
 using graphjit::backend::IRGenerator;
 using graphjit::frontend::TokenType;
@@ -190,6 +191,23 @@ void testNestedAdditionUsesTemporary() {
            "nested addition should emit two fadds");
 }
 
+void testFusedKernelPassthrough() {
+    auto root = std::make_unique<FusedKernelNode>(additionExpression());
+    ShapeInferenceVisitor inference(SymbolTable{
+        {"A", TensorShape{{2, 2}}},
+        {"B", TensorShape{{2, 2}}},
+    });
+    static_cast<void>(inference.infer(*root));
+
+    IRGenerator generator(inference.annotations());
+    llvm::Function* const function =
+        generator.compileTensor(root.get(), {"A", "B"});
+    expect(!llvm::verifyFunction(*function),
+           "tensor fused-kernel passthrough failed verification");
+    expect(moduleText(generator).find("fadd double") != std::string::npos,
+           "tensor fused kernel did not lower its inner addition");
+}
+
 void testInputAndShapeValidation() {
     auto root = additionExpression();
     IRGenerator noShapes;
@@ -319,6 +337,7 @@ int main() {
         testMatrixMultiplication();
         testTensorAddition();
         testNestedAdditionUsesTemporary();
+        testFusedKernelPassthrough();
         testInputAndShapeValidation();
         testInvalidShapesAndOperators();
         testFailedCompileCanBeRetried();

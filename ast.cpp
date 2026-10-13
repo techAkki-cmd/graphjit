@@ -148,4 +148,35 @@ void FunctionDeclNode::accept(ASTVisitor& visitor) {
     visitor.visit(*this);
 }
 
+FusedKernelNode::FusedKernelNode(std::unique_ptr<ASTNode> fusedExpression)
+    : fusedExpression_(std::move(fusedExpression)) {
+    if (!fusedExpression_) {
+        throw std::invalid_argument("fused kernel requires an expression");
+    }
+}
+
+ASTNode& FusedKernelNode::fusedExpression() noexcept {
+    return *fusedExpression_;
+}
+
+const ASTNode& FusedKernelNode::fusedExpression() const noexcept {
+    return *fusedExpression_;
+}
+
+std::unique_ptr<ASTNode> FusedKernelNode::takeFusedExpression() noexcept {
+    return std::move(fusedExpression_);
+}
+
+void FusedKernelNode::setFusedExpression(
+    std::unique_ptr<ASTNode> fusedExpression) {
+    if (!fusedExpression) {
+        throw std::invalid_argument("fused kernel requires an expression");
+    }
+    fusedExpression_ = std::move(fusedExpression);
+}
+
+void FusedKernelNode::accept(ASTVisitor& visitor) {
+    visitor.visit(*this);
+}
+
 } // namespace graphjit::ast

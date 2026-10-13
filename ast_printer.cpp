@@ -101,4 +101,11 @@ void ASTPrinter::visit(FunctionDeclNode& node) {
     printChild("Body", node.body());
 }
 
+void ASTPrinter::visit(FusedKernelNode& node) {
+    output_ << "[Fused Kernel]\n";
+    const IndentationGuard indentation(indentationLevel_);
+    printIndent();
+    node.fusedExpression().accept(*this);
+}
+
 } // namespace graphjit::ast

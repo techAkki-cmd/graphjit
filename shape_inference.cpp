@@ -157,4 +157,9 @@ void ShapeInferenceVisitor::visit(ast::FunctionDeclNode& node) {
     annotate(node, shapeOf(node.body()));
 }
 
+void ShapeInferenceVisitor::visit(ast::FusedKernelNode& node) {
+    node.fusedExpression().accept(*this);
+    annotate(node, shapeOf(node.fusedExpression()));
+}
+
 } // namespace graphjit::analysis

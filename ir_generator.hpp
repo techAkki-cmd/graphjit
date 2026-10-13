@@ -53,6 +53,7 @@ class IRGenerator final : public ast::ASTVisitor {
     void visit(ast::VariableNode& node) override;
     void visit(ast::BinaryOpNode& node) override;
     void visit(ast::FunctionDeclNode& node) override;
+    void visit(ast::FusedKernelNode& node) override;
 
   private:
     void createLoop(llvm::Value* start, llvm::Value* end,

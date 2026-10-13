@@ -307,6 +307,12 @@ void IRGenerator::visit(ast::FunctionDeclNode&) {
         "Function declaration IR generation is not supported in Phase 6");
 }
 
+void IRGenerator::visit(ast::FusedKernelNode& node) {
+    // Phase 8 records a scheduling boundary. Dedicated single-loop lowering is
+    // deferred, so preserve existing scalar and tensor behavior for now.
+    node.fusedExpression().accept(*this);
+}
+
 void IRGenerator::createLoop(llvm::Value* const start, llvm::Value* const end,
                              const std::string& varName,
                              llvm::BasicBlock*& preheader,

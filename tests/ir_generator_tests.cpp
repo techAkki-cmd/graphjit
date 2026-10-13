@@ -26,6 +26,7 @@ namespace {
 using graphjit::ast::BinaryOpNode;
 using graphjit::ast::FloatLiteralNode;
 using graphjit::ast::FunctionDeclNode;
+using graphjit::ast::FusedKernelNode;
 using graphjit::backend::IRGenerator;
 using graphjit::frontend::Lexer;
 using graphjit::frontend::Parser;
@@ -116,6 +117,15 @@ void testScalarOperators() {
     }
 }
 
+void testFusedKernelPassthrough() {
+    auto fused = std::make_unique<FusedKernelNode>(
+        parseExpression("2.0 + 3.0 * 4.0"));
+    IRGenerator generator;
+    llvm::Function* const function = generator.compile(fused.get());
+    expect(returnedConstant(*function) == 14.0,
+           "scalar fused kernel did not preserve IR generation");
+}
+
 void testInvalidInputs() {
     IRGenerator nullGenerator;
     expectException<std::invalid_argument>(
@@ -178,6 +188,7 @@ int main() {
     try {
         testDemoExpression();
         testScalarOperators();
+        testFusedKernelPassthrough();
         testInvalidInputs();
         testCompileLifecycle();
     } catch (const std::exception& error) {

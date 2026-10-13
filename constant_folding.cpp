@@ -40,6 +40,9 @@ std::unique_ptr<ast::ASTNode> ConstantFoldingPass::rewrite(
     if (auto* const function = dynamic_cast<ast::FunctionDeclNode*>(node.get())) {
         return rewriteFunction(std::move(node), *function);
     }
+    if (auto* const fusedKernel = dynamic_cast<ast::FusedKernelNode*>(node.get())) {
+        return rewriteFusedKernel(std::move(node), *fusedKernel);
+    }
 
     // Literal and variable leaves have no children and retain their identity.
     return node;
@@ -72,6 +75,13 @@ std::unique_ptr<ast::ASTNode> ConstantFoldingPass::rewriteFunction(
     std::unique_ptr<ast::ASTNode> node,
     ast::FunctionDeclNode& function) {
     function.setBody(rewrite(function.takeBody()));
+    return node;
+}
+
+std::unique_ptr<ast::ASTNode> ConstantFoldingPass::rewriteFusedKernel(
+    std::unique_ptr<ast::ASTNode> node,
+    ast::FusedKernelNode& fusedKernel) {
+    fusedKernel.setFusedExpression(rewrite(fusedKernel.takeFusedExpression()));
     return node;
 }
 

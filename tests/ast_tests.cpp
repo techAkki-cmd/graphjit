@@ -21,6 +21,7 @@ using graphjit::ast::ASTVisitor;
 using graphjit::ast::BinaryOpNode;
 using graphjit::ast::FloatLiteralNode;
 using graphjit::ast::FunctionDeclNode;
+using graphjit::ast::FusedKernelNode;
 using graphjit::ast::VariableNode;
 using graphjit::ast::binaryOperatorSpelling;
 using graphjit::frontend::TokenType;
@@ -29,8 +30,10 @@ static_assert(!std::is_copy_constructible_v<FloatLiteralNode>);
 static_assert(!std::is_copy_constructible_v<VariableNode>);
 static_assert(!std::is_copy_constructible_v<BinaryOpNode>);
 static_assert(!std::is_copy_constructible_v<FunctionDeclNode>);
+static_assert(!std::is_copy_constructible_v<FusedKernelNode>);
 static_assert(std::is_move_constructible_v<BinaryOpNode>);
 static_assert(std::is_move_constructible_v<FunctionDeclNode>);
+static_assert(std::is_move_constructible_v<FusedKernelNode>);
 
 [[noreturn]] void fail(const std::string& message) {
     throw std::runtime_error(message);
@@ -95,10 +98,15 @@ public:
         ++functionVisits;
     }
 
+    void visit(FusedKernelNode&) override {
+        ++fusedKernelVisits;
+    }
+
     int floatVisits{0};
     int variableVisits{0};
     int binaryVisits{0};
     int functionVisits{0};
+    int fusedKernelVisits{0};
 };
 
 void testDoubleDispatch() {
@@ -110,17 +118,21 @@ void testDoubleDispatch() {
         std::make_unique<VariableNode>("rhs"));
     FunctionDeclNode function(
         "compute", {"A", "B"}, std::make_unique<FloatLiteralNode>(0.0));
+    FusedKernelNode fusedKernel(std::make_unique<FloatLiteralNode>(1.0));
 
     RecordingVisitor visitor;
     literal.accept(visitor);
     variable.accept(visitor);
     binary.accept(visitor);
     function.accept(visitor);
+    fusedKernel.accept(visitor);
 
     expect(visitor.floatVisits == 1, "float visitor overload was not selected");
     expect(visitor.variableVisits == 1, "variable visitor overload was not selected");
     expect(visitor.binaryVisits == 1, "binary visitor overload was not selected");
     expect(visitor.functionVisits == 1, "function visitor overload was not selected");
+    expect(visitor.fusedKernelVisits == 1,
+           "fused-kernel visitor overload was not selected");
 }
 
 void testAccessorsAndOwnership() {
@@ -162,6 +174,19 @@ void testAccessorsAndOwnership() {
     expectInvalidArgument([&] { function.setBody(nullptr); });
     function.setBody(std::move(takenBody));
     expect(&function.body() == bodyAddress, "function body was not restored");
+
+    auto fusedExpression = std::make_unique<VariableNode>("A");
+    const ASTNode* const fusedExpressionAddress = fusedExpression.get();
+    FusedKernelNode fusedKernel(std::move(fusedExpression));
+    expect(&fusedKernel.fusedExpression() == fusedExpressionAddress,
+           "fused expression ownership was not transferred");
+    auto takenExpression = fusedKernel.takeFusedExpression();
+    expect(takenExpression.get() == fusedExpressionAddress,
+           "fused expression could not be taken for rewriting");
+    expectInvalidArgument([&] { fusedKernel.setFusedExpression(nullptr); });
+    fusedKernel.setFusedExpression(std::move(takenExpression));
+    expect(&fusedKernel.fusedExpression() == fusedExpressionAddress,
+           "fused expression was not restored");
 }
 
 void testFunctionPrinterOutput() {
@@ -178,6 +203,22 @@ void testFunctionPrinterOutput() {
         "      Right: VariableNode: B\n"
         "    Right: FloatLiteralNode: 2.0\n";
     expect(output.str() == expected, "function tree output does not match");
+}
+
+void testFusedKernelPrinterOutput() {
+    FusedKernelNode fusedKernel(makeSampleExpression());
+    std::ostringstream output;
+    ASTPrinter printer(output);
+    fusedKernel.accept(printer);
+
+    constexpr std::string_view expected =
+        "[Fused Kernel]\n"
+        "  BinaryOpNode: +\n"
+        "    Left: BinaryOpNode: @\n"
+        "      Left: VariableNode: A\n"
+        "      Right: VariableNode: B\n"
+        "    Right: FloatLiteralNode: 2.0\n";
+    expect(output.str() == expected, "fused-kernel tree output does not match");
 }
 
 void testOperatorSpellings() {
@@ -212,6 +253,9 @@ void testInvalidTrees() {
         FunctionDeclNode invalid("compute", {}, nullptr);
     });
     expectInvalidArgument([] {
+        FusedKernelNode invalid(nullptr);
+    });
+    expectInvalidArgument([] {
         static_cast<void>(binaryOperatorSpelling(TokenType::Identifier));
     });
 }
@@ -224,6 +268,7 @@ int main() {
         testDoubleDispatch();
         testAccessorsAndOwnership();
         testFunctionPrinterOutput();
+        testFusedKernelPrinterOutput();
         testOperatorSpellings();
         testInvalidTrees();
     } catch (const std::exception& error) {
