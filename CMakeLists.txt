@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJIT VERSION 0.9.0 LANGUAGES C CXX)
+project(GraphJIT VERSION 0.10.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -153,6 +153,27 @@ if(GRAPHJIT_ENABLE_LLVM)
         PRIVATE graphjit_jit graphjit_ir_backend
     )
     graphjit_enable_warnings(graphjit_jit_demo)
+
+    add_library(graphjit_driver compiler_driver.cpp)
+    target_include_directories(
+        graphjit_driver
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_link_libraries(
+        graphjit_driver
+        PUBLIC
+            graphjit_parser
+            graphjit_optimizer
+            graphjit_shape_analysis
+            graphjit_ir_backend
+            graphjit_jit
+    )
+    target_compile_features(graphjit_driver PUBLIC cxx_std_20)
+    graphjit_enable_warnings(graphjit_driver)
+
+    add_executable(graphjit graphjit_main.cpp)
+    target_link_libraries(graphjit PRIVATE graphjit_driver)
+    graphjit_enable_warnings(graphjit)
 endif()
 
 include(CTest)
@@ -225,5 +246,13 @@ if(BUILD_TESTING)
         )
         graphjit_enable_warnings(graphjit_jit_tests)
         add_test(NAME graphjit_jit_tests COMMAND graphjit_jit_tests)
+
+        add_executable(graphjit_driver_tests tests/compiler_driver_tests.cpp)
+        target_link_libraries(
+            graphjit_driver_tests
+            PRIVATE graphjit_driver
+        )
+        graphjit_enable_warnings(graphjit_driver_tests)
+        add_test(NAME graphjit_driver_tests COMMAND graphjit_driver_tests)
     endif()
 endif()
