@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(GraphJIT VERSION 0.8.0 LANGUAGES C CXX)
+project(GraphJIT VERSION 0.9.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -98,6 +98,10 @@ if(GRAPHJIT_ENABLE_LLVM)
         "${LLVM_DEFINITIONS}"
     )
     llvm_map_components_to_libnames(GRAPHJIT_LLVM_LIBS core support)
+    llvm_map_components_to_libnames(
+        GRAPHJIT_JIT_LLVM_LIBS
+        core orcjit native support
+    )
 
     add_library(graphjit_ir_backend ir_generator.cpp)
     target_include_directories(
@@ -125,6 +129,30 @@ if(GRAPHJIT_ENABLE_LLVM)
         PRIVATE graphjit_ir_backend
     )
     graphjit_enable_warnings(graphjit_ir_demo)
+
+    add_library(graphjit_jit jit_engine.cpp)
+    target_include_directories(
+        graphjit_jit
+        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    target_include_directories(
+        graphjit_jit
+        SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS}
+    )
+    target_compile_options(graphjit_jit PUBLIC ${GRAPHJIT_LLVM_DEFINITIONS})
+    target_link_libraries(
+        graphjit_jit
+        PUBLIC ${GRAPHJIT_JIT_LLVM_LIBS}
+    )
+    target_compile_features(graphjit_jit PUBLIC cxx_std_20)
+    graphjit_enable_warnings(graphjit_jit)
+
+    add_executable(graphjit_jit_demo jit_main.cpp)
+    target_link_libraries(
+        graphjit_jit_demo
+        PRIVATE graphjit_jit graphjit_ir_backend
+    )
+    graphjit_enable_warnings(graphjit_jit_demo)
 endif()
 
 include(CTest)
@@ -189,5 +217,13 @@ if(BUILD_TESTING)
         )
         graphjit_enable_warnings(graphjit_tensor_ir_tests)
         add_test(NAME graphjit_tensor_ir_tests COMMAND graphjit_tensor_ir_tests)
+
+        add_executable(graphjit_jit_tests tests/jit_engine_tests.cpp)
+        target_link_libraries(
+            graphjit_jit_tests
+            PRIVATE graphjit_jit graphjit_ir_backend
+        )
+        graphjit_enable_warnings(graphjit_jit_tests)
+        add_test(NAME graphjit_jit_tests COMMAND graphjit_jit_tests)
     endif()
 endif()

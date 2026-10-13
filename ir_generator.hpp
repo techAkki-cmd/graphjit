@@ -25,6 +25,13 @@
 
 namespace graphjit::backend {
 
+/// Owns an LLVM module and the context that all of its IR references.
+/// Field order ensures the module is destroyed before its context.
+struct OwnedLLVMModule {
+    std::unique_ptr<llvm::LLVMContext> context;
+    std::unique_ptr<llvm::Module> module;
+};
+
 /// Lowers scalar expressions and fixed-shape tensor expressions to verified IR.
 class IRGenerator final : public ast::ASTVisitor {
   public:
@@ -46,8 +53,12 @@ class IRGenerator final : public ast::ASTVisitor {
     [[nodiscard]] llvm::Function*
     compileTensor(ast::ASTNode* root, std::vector<std::string> inputNames);
 
-    [[nodiscard]] llvm::Module& module() noexcept;
-    [[nodiscard]] const llvm::Module& module() const noexcept;
+    [[nodiscard]] llvm::Module& module();
+    [[nodiscard]] const llvm::Module& module() const;
+
+    /// Atomically transfers the finished module and its context. The generator
+    /// is permanently consumed after this call.
+    [[nodiscard]] OwnedLLVMModule takeModule();
 
     void visit(ast::FloatLiteralNode& node) override;
     void visit(ast::VariableNode& node) override;

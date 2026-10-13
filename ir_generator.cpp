@@ -44,6 +44,10 @@ IRGenerator::IRGenerator(analysis::ShapeAnnotations shapeAnnotations)
 }
 
 llvm::Function* IRGenerator::compile(ast::ASTNode* const root) {
+    if (!module_ || !context_ || !builder_) {
+        throw std::logic_error(
+            "IRGenerator cannot compile after module ownership was transferred");
+    }
     if (root == nullptr) {
         throw std::invalid_argument(
             "cannot generate LLVM IR for a null AST root");
@@ -100,6 +104,10 @@ llvm::Function* IRGenerator::compile(ast::ASTNode* const root) {
 llvm::Function*
 IRGenerator::compileTensor(ast::ASTNode* const root,
                            std::vector<std::string> inputNames) {
+    if (!module_ || !context_ || !builder_) {
+        throw std::logic_error(
+            "IRGenerator cannot compile after module ownership was transferred");
+    }
     if (root == nullptr) {
         throw std::invalid_argument(
             "cannot generate tensor LLVM IR for a null AST root");
@@ -182,9 +190,32 @@ IRGenerator::compileTensor(ast::ASTNode* const root,
     }
 }
 
-llvm::Module& IRGenerator::module() noexcept { return *module_; }
+llvm::Module& IRGenerator::module() {
+    if (!module_) {
+        throw std::logic_error("LLVM module ownership has already been transferred");
+    }
+    return *module_;
+}
 
-const llvm::Module& IRGenerator::module() const noexcept { return *module_; }
+const llvm::Module& IRGenerator::module() const {
+    if (!module_) {
+        throw std::logic_error("LLVM module ownership has already been transferred");
+    }
+    return *module_;
+}
+
+OwnedLLVMModule IRGenerator::takeModule() {
+    if (!module_ || !context_ || !builder_) {
+        throw std::logic_error("LLVM module ownership has already been transferred");
+    }
+    if (activeFunction_ != nullptr) {
+        throw std::logic_error("cannot transfer an LLVM module during IR generation");
+    }
+
+    resetTransientState();
+    builder_.reset();
+    return OwnedLLVMModule{std::move(context_), std::move(module_)};
+}
 
 void IRGenerator::visit(ast::FloatLiteralNode& node) {
     if (tensorMode_) {
