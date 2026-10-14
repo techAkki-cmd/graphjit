@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(GRAPHJIT_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 function(graphjit_enable_warnings target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W4 /permissive-)
@@ -23,62 +25,69 @@ function(graphjit_enable_warnings target)
     endif()
 endfunction()
 
-add_library(graphjit_lexer lexer.cpp)
-target_include_directories(graphjit_lexer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(graphjit_lexer src/frontend/lexer.cpp)
+target_include_directories(graphjit_lexer PUBLIC ${GRAPHJIT_INCLUDE_DIR})
 target_compile_features(graphjit_lexer PUBLIC cxx_std_20)
 graphjit_enable_warnings(graphjit_lexer)
 
-add_executable(graphjit_lexer_demo main.cpp)
+add_executable(graphjit_lexer_demo apps/demos/lexer_demo.cpp)
 target_link_libraries(graphjit_lexer_demo PRIVATE graphjit_lexer)
 graphjit_enable_warnings(graphjit_lexer_demo)
 
-add_library(graphjit_ast ast.cpp ast_printer.cpp)
-target_include_directories(graphjit_ast PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(graphjit_ast src/ast/ast.cpp src/ast/ast_printer.cpp)
+target_include_directories(graphjit_ast PUBLIC ${GRAPHJIT_INCLUDE_DIR})
 target_link_libraries(graphjit_ast PUBLIC graphjit_lexer)
 target_compile_features(graphjit_ast PUBLIC cxx_std_20)
 graphjit_enable_warnings(graphjit_ast)
 
-add_executable(graphjit_ast_demo ast_main.cpp)
+add_executable(graphjit_ast_demo apps/demos/ast_demo.cpp)
 target_link_libraries(graphjit_ast_demo PRIVATE graphjit_ast)
 graphjit_enable_warnings(graphjit_ast_demo)
 
-add_library(graphjit_parser parser.cpp)
-target_include_directories(graphjit_parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(graphjit_parser src/frontend/parser.cpp)
+target_include_directories(graphjit_parser PUBLIC ${GRAPHJIT_INCLUDE_DIR})
 target_link_libraries(graphjit_parser PUBLIC graphjit_ast)
 target_compile_features(graphjit_parser PUBLIC cxx_std_20)
 graphjit_enable_warnings(graphjit_parser)
 
-add_executable(graphjit_parser_demo parser_main.cpp)
+add_executable(graphjit_parser_demo apps/demos/parser_demo.cpp)
 target_link_libraries(graphjit_parser_demo PRIVATE graphjit_parser)
 graphjit_enable_warnings(graphjit_parser_demo)
 
-add_library(graphjit_optimizer constant_folding.cpp kernel_fusion.cpp)
-target_include_directories(graphjit_optimizer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(
+    graphjit_optimizer
+    src/opt/constant_folding.cpp
+    src/opt/kernel_fusion.cpp
+)
+target_include_directories(graphjit_optimizer PUBLIC ${GRAPHJIT_INCLUDE_DIR})
 target_link_libraries(graphjit_optimizer PUBLIC graphjit_ast)
 target_compile_features(graphjit_optimizer PUBLIC cxx_std_20)
 graphjit_enable_warnings(graphjit_optimizer)
 
-add_executable(graphjit_opt_demo opt_main.cpp)
+add_executable(graphjit_opt_demo apps/demos/optimizer_demo.cpp)
 target_link_libraries(
     graphjit_opt_demo
     PRIVATE graphjit_optimizer graphjit_parser
 )
 graphjit_enable_warnings(graphjit_opt_demo)
 
-add_executable(graphjit_fusion_demo fusion_main.cpp)
+add_executable(graphjit_fusion_demo apps/demos/fusion_demo.cpp)
 target_link_libraries(
     graphjit_fusion_demo
     PRIVATE graphjit_optimizer graphjit_parser
 )
 graphjit_enable_warnings(graphjit_fusion_demo)
 
-add_library(graphjit_shape_analysis shape_inference.cpp)
-target_include_directories(graphjit_shape_analysis PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_library(graphjit_shape_analysis src/analysis/shape_inference.cpp)
+target_include_directories(
+    graphjit_shape_analysis
+    PUBLIC ${GRAPHJIT_INCLUDE_DIR}
+)
 target_link_libraries(graphjit_shape_analysis PUBLIC graphjit_ast)
 target_compile_features(graphjit_shape_analysis PUBLIC cxx_std_20)
 graphjit_enable_warnings(graphjit_shape_analysis)
 
-add_executable(graphjit_shape_demo shape_main.cpp)
+add_executable(graphjit_shape_demo apps/demos/shape_demo.cpp)
 target_link_libraries(
     graphjit_shape_demo
     PRIVATE graphjit_shape_analysis graphjit_parser
@@ -103,10 +112,10 @@ if(GRAPHJIT_ENABLE_LLVM)
         core orcjit native support
     )
 
-    add_library(graphjit_ir_backend ir_generator.cpp)
+    add_library(graphjit_ir_backend src/backend/ir_generator.cpp)
     target_include_directories(
         graphjit_ir_backend
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+        PUBLIC ${GRAPHJIT_INCLUDE_DIR}
     )
     target_include_directories(
         graphjit_ir_backend
@@ -123,17 +132,17 @@ if(GRAPHJIT_ENABLE_LLVM)
     target_compile_features(graphjit_ir_backend PUBLIC cxx_std_20)
     graphjit_enable_warnings(graphjit_ir_backend)
 
-    add_executable(graphjit_ir_demo ir_main.cpp)
+    add_executable(graphjit_ir_demo apps/demos/ir_demo.cpp)
     target_link_libraries(
         graphjit_ir_demo
         PRIVATE graphjit_ir_backend
     )
     graphjit_enable_warnings(graphjit_ir_demo)
 
-    add_library(graphjit_jit jit_engine.cpp)
+    add_library(graphjit_jit src/jit/jit_engine.cpp)
     target_include_directories(
         graphjit_jit
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+        PUBLIC ${GRAPHJIT_INCLUDE_DIR}
     )
     target_include_directories(
         graphjit_jit
@@ -147,17 +156,17 @@ if(GRAPHJIT_ENABLE_LLVM)
     target_compile_features(graphjit_jit PUBLIC cxx_std_20)
     graphjit_enable_warnings(graphjit_jit)
 
-    add_executable(graphjit_jit_demo jit_main.cpp)
+    add_executable(graphjit_jit_demo apps/demos/jit_demo.cpp)
     target_link_libraries(
         graphjit_jit_demo
         PRIVATE graphjit_jit graphjit_ir_backend
     )
     graphjit_enable_warnings(graphjit_jit_demo)
 
-    add_library(graphjit_driver compiler_driver.cpp)
+    add_library(graphjit_driver src/driver/compiler_driver.cpp)
     target_include_directories(
         graphjit_driver
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+        PUBLIC ${GRAPHJIT_INCLUDE_DIR}
     )
     target_link_libraries(
         graphjit_driver
@@ -171,7 +180,7 @@ if(GRAPHJIT_ENABLE_LLVM)
     target_compile_features(graphjit_driver PUBLIC cxx_std_20)
     graphjit_enable_warnings(graphjit_driver)
 
-    add_executable(graphjit graphjit_main.cpp)
+    add_executable(graphjit apps/graphjit.cpp)
     target_link_libraries(graphjit PRIVATE graphjit_driver)
     graphjit_enable_warnings(graphjit)
 endif()

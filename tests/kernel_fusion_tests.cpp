@@ -1,10 +1,10 @@
-#include "ast.hpp"
-#include "ast_printer.hpp"
-#include "constant_folding.hpp"
-#include "kernel_fusion.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
-#include "shape_inference.hpp"
+#include "graphjit/ast/ast.hpp"
+#include "graphjit/ast/ast_printer.hpp"
+#include "graphjit/opt/constant_folding.hpp"
+#include "graphjit/opt/kernel_fusion.hpp"
+#include "graphjit/frontend/lexer.hpp"
+#include "graphjit/frontend/parser.hpp"
+#include "graphjit/analysis/shape_inference.hpp"
 
 #include <cstdlib>
 #include <exception>

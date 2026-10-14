@@ -1,6 +1,6 @@
-#include "ast_printer.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
+#include "graphjit/ast/ast_printer.hpp"
+#include "graphjit/frontend/lexer.hpp"
+#include "graphjit/frontend/parser.hpp"
 
 #include <cstdlib>
 #include <exception>

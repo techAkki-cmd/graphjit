@@ -1,5 +1,5 @@
-#include "ast.hpp"
-#include "ast_printer.hpp"
+#include "graphjit/ast/ast.hpp"
+#include "graphjit/ast/ast_printer.hpp"
 
 #include <cstdlib>
 #include <exception>

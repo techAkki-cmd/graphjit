@@ -1,7 +1,7 @@
-#include "ast.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
-#include "shape_inference.hpp"
+#include "graphjit/ast/ast.hpp"
+#include "graphjit/frontend/lexer.hpp"
+#include "graphjit/frontend/parser.hpp"
+#include "graphjit/analysis/shape_inference.hpp"
 
 #include <array>
 #include <cstdlib>

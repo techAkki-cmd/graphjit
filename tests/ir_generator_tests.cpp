@@ -1,7 +1,7 @@
-#include "ast.hpp"
-#include "ir_generator.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
+#include "graphjit/ast/ast.hpp"
+#include "graphjit/backend/ir_generator.hpp"
+#include "graphjit/frontend/lexer.hpp"
+#include "graphjit/frontend/parser.hpp"
 
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Function.h>

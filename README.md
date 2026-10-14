@@ -366,19 +366,26 @@ from the timed region.
 ## Repository map
 
 ```text
-lexer.*                 Tokenization and lexical diagnostics
-parser.*                Recursive-descent expression parser
-ast.*                   Move-only AST nodes and visitor interface
-ast_printer.*           Human-readable structural printer
-shape_inference.*       Shape analysis and annotations
-constant_folding.*      Bottom-up scalar folding
-kernel_fusion.*         Element-wise fusion-region discovery
-ir_generator.*          Scalar and tensor LLVM lowering
-jit_engine.*            ORC LLJIT ownership and symbol lookup
-compiler_driver.*       End-to-end pipeline and benchmark logic
-graphjit_main.cpp       graphjit command-line entry point
-tests/                  Dependency-free phase and integration tests
+include/graphjit/        Public C++ interfaces, grouped by subsystem
+  frontend/             Lexer and recursive-descent parser
+  ast/                  AST nodes, visitors, and tree printer
+  analysis/             Shape inference and annotations
+  opt/                  AST rewriter, constant folding, and fusion
+  backend/              Scalar and tensor LLVM IR generation
+  jit/                  ORC LLJIT execution engine
+  driver/               End-to-end compiler-driver interface
+src/                    Implementations matching the public subsystems
+apps/graphjit.cpp       graphjit command-line entry point
+apps/demos/             Focused executables for individual compiler phases
+tests/                  Dependency-free unit and integration tests
+CMakeLists.txt          Libraries, executables, LLVM integration, and CTest
 ```
+
+The public include layout mirrors the C++ namespaces. For example, frontend
+clients include `graphjit/frontend/parser.hpp`, while optimization clients use
+`graphjit/opt/constant_folding.hpp`. Keeping interfaces, implementations,
+applications, and tests separate makes subsystem boundaries visible without
+changing the compiler's runtime behavior.
 
 The phase-specific demo executables remain available as focused examples:
 
@@ -446,8 +453,10 @@ ctest --test-dir build --output-on-failure
 ```
 
 For implementation details, good starting points are
-[`ast.hpp`](ast.hpp), [`shape_inference.cpp`](shape_inference.cpp),
-[`ir_generator.cpp`](ir_generator.cpp), and [`jit_engine.cpp`](jit_engine.cpp).
+[`ast.hpp`](include/graphjit/ast/ast.hpp),
+[`shape_inference.cpp`](src/analysis/shape_inference.cpp),
+[`ir_generator.cpp`](src/backend/ir_generator.cpp), and
+[`jit_engine.cpp`](src/jit/jit_engine.cpp).
 
 ---
 

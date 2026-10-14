@@ -1,7 +1,7 @@
-#include "ast.hpp"
-#include "ir_generator.hpp"
-#include "jit_engine.hpp"
-#include "shape_inference.hpp"
+#include "graphjit/ast/ast.hpp"
+#include "graphjit/backend/ir_generator.hpp"
+#include "graphjit/jit/jit_engine.hpp"
+#include "graphjit/analysis/shape_inference.hpp"
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>

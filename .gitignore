@@ -1,0 +1,16 @@
+# IDE and operating-system metadata
+.idea/
+.DS_Store
+
+# CMake build trees and generated metadata
+build/
+build-*/
+cmake-build-*/
+CMakeUserPresets.json
+compile_commands.json
+
+# Coverage and profiling output
+*.gcda
+*.gcno
+*.profraw
+*.profdata

@@ -1,6 +1,6 @@
-#include "ast.hpp"
-#include "ir_generator.hpp"
-#include "shape_inference.hpp"
+#include "graphjit/ast/ast.hpp"
+#include "graphjit/backend/ir_generator.hpp"
+#include "graphjit/analysis/shape_inference.hpp"
 
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Verifier.h>
